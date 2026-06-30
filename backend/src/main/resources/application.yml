@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: vob-workbench
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/vob_workbench
+
+server:
+  port: 8080
