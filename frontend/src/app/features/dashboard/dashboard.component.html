@@ -1,0 +1,112 @@
+<app-page-header
+  eyebrow="Operations"
+  title="Dashboard"
+  description="A quick view of verification work, urgent requests, and completion volume."
+>
+  <button type="button" class="button ghost" (click)="load()" [disabled]="loading()">
+    @if (loading()) {
+      <app-loading-indicator label="Refreshing" />
+    } @else {
+      Refresh
+    }
+  </button>
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+@if (loading()) {
+  <div class="skeleton-grid">
+    <span></span>
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+} @else if (summary(); as summaryData) {
+  <section class="metric-grid">
+    <article class="metric-card">
+      <span>Total requests</span>
+      <strong>{{ summaryData.totalRequests }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Pending</span>
+      <strong>{{ summaryData.pending }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>In progress</span>
+      <strong>{{ summaryData.inProgress }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Verified</span>
+      <strong>{{ summaryData.verified }}</strong>
+    </article>
+    <article class="metric-card urgent">
+      <span>Urgent</span>
+      <strong>{{ summaryData.urgent }}</strong>
+    </article>
+  </section>
+}
+
+<section class="content-grid">
+  <article class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Urgent Work</h2>
+        <p>Requests marked urgent across the worklist.</p>
+      </div>
+      <a routerLink="/vobs" class="button ghost">Open worklist</a>
+    </div>
+
+    @if (loading()) {
+      <app-loading-indicator mode="table" label="Loading urgent requests" [rows]="4" [columns]="4" />
+    } @else if (urgentRequests().length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Date of service</th>
+              <th>Assigned</th>
+              <th>Estimated charge</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (request of urgentRequests(); track request.id) {
+              <tr [routerLink]="['/vobs', request.id]">
+                <td><app-status-badge [value]="request.status" /></td>
+                <td>{{ request.dateOfService }}</td>
+                <td>{{ request.assignedTo || 'Unassigned' }}</td>
+                <td>{{ request.procedures[0]?.estimatedCharge || 0 | currency }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <app-empty-state title="No urgent work" message="Urgent requests will appear here when they are created." />
+    }
+  </article>
+
+  <article class="panel guide">
+    <h2>Workflow</h2>
+    <ol>
+      <li>Find the patient and request context.</li>
+      @if (permissions.canCreatePatient()) {
+        <li>Create or update patient demographics.</li>
+      }
+      @if (permissions.canCreateVobRequest()) {
+        <li>Create a VOB request with insurance and procedures.</li>
+      }
+      @if (permissions.canRunSpecialistWorkflow()) {
+        <li>Run eligibility, review missing fields, and calculate coverage.</li>
+      }
+      @if (permissions.canManageAdmin()) {
+        <li>Manage users, mock data, reopened requests, and audit search.</li>
+      }
+      @if (!permissions.canCreatePatient() && !permissions.canCreateVobRequest() && !permissions.canRunSpecialistWorkflow()) {
+        <li>Review final results and audit history without making changes.</li>
+      }
+    </ol>
+  </article>
+</section>

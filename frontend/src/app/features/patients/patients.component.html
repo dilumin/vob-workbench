@@ -1,0 +1,132 @@
+<app-page-header
+  eyebrow="Front Office"
+  title="Patients"
+  description="Create patient records and keep basic demographic information current."
+>
+  @if (permissions.canCreatePatient()) {
+    <button type="button" class="button primary" (click)="openCreateModal()">New patient</button>
+  }
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+<section class="panel">
+  <div class="section-heading">
+    <h2>Patient directory</h2>
+    <span class="count-pill">{{ pageInfo()?.totalElements || 0 }} total</span>
+  </div>
+
+  <div class="toolbar">
+    <label class="search-field">
+      Search patients
+      <input [(ngModel)]="searchTerm" placeholder="MRN, first name, or last name" (keyup.enter)="search()" />
+    </label>
+    <button type="button" class="button ghost" (click)="search()" [disabled]="loading()">
+      @if (loading()) {
+        <app-loading-indicator label="Searching" />
+      } @else {
+        Search
+      }
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-indicator mode="table" label="Loading patients" [rows]="5" [columns]="5" />
+  } @else if (patients().length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>MRN</th>
+            <th>Name</th>
+            <th>Date of birth</th>
+            <th>Phone</th>
+            @if (permissions.canEditPatient() || permissions.canCreateVobRequest()) {
+              <th></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (patient of patients(); track patient.id) {
+            <tr>
+              <td>{{ patient.mrn }}</td>
+              <td>{{ patient.firstName }} {{ patient.lastName }}</td>
+              <td>{{ patient.dateOfBirth | date }}</td>
+              <td>{{ patient.phone || 'Not provided' }}</td>
+              @if (permissions.canEditPatient() || permissions.canCreateVobRequest()) {
+                <td class="right">
+                  <div class="row-actions">
+                    @if (permissions.canCreateVobRequest()) {
+                      <a class="button primary" [routerLink]="['/vobs']" [queryParams]="{ patientId: patient.id }">New VOB</a>
+                    }
+                    @if (permissions.canEditPatient()) {
+                      <button type="button" class="button ghost" (click)="openEditModal(patient)">Edit</button>
+                    }
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (pageInfo(); as page) {
+      <app-pagination
+        [page]="page.page"
+        [size]="pageSize()"
+        [totalElements]="page.totalElements"
+        [totalPages]="page.totalPages"
+        [disabled]="loading()"
+        (pageChange)="load($event)"
+        (sizeChange)="changePageSize($event)"
+      />
+    }
+  } @else {
+    <app-empty-state
+      title="No patients found"
+      [message]="permissions.canCreatePatient() ? 'Create a patient or try a broader search.' : 'Try a broader search.'"
+    />
+  }
+</section>
+
+<app-modal [open]="modalOpen()" [title]="editingPatient() ? 'Edit patient' : 'New patient'" (closed)="modalOpen.set(false)">
+  <form class="modal-body form-grid" [formGroup]="form" (ngSubmit)="save()">
+    <label>
+      MRN
+      <input formControlName="mrn" />
+    </label>
+    <label>
+      First name
+      <input formControlName="firstName" />
+    </label>
+    <label>
+      Last name
+      <input formControlName="lastName" />
+    </label>
+    <label>
+      Date of birth
+      <input type="date" formControlName="dateOfBirth" />
+    </label>
+    <label>
+      Gender
+      <input formControlName="gender" />
+    </label>
+    <label>
+      Phone
+      <input formControlName="phone" />
+    </label>
+
+    <div class="form-actions full">
+      <button type="button" class="button ghost" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="submit" class="button primary" [disabled]="saving()">
+        @if (saving()) {
+          <app-loading-indicator label="Saving" />
+        } @else {
+          Save patient
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

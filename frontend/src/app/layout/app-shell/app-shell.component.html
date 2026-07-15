@@ -1,0 +1,45 @@
+<div class="shell">
+  <aside class="sidebar">
+    <a class="brand" routerLink="/dashboard">
+      <span class="brand-mark">V</span>
+      <span>
+        <strong>VOB Workbench</strong>
+        <small>Benefit verification</small>
+      </span>
+    </a>
+
+    <nav aria-label="Main navigation">
+      @for (item of navItems; track item.route) {
+        @if (canShow(item.adminOnly)) {
+          <a [routerLink]="item.route" routerLinkActive="active">
+            {{ item.label }}
+          </a>
+        }
+      }
+    </nav>
+  </aside>
+
+  <div class="workspace">
+    @if (navigating()) {
+      <div class="route-progress" aria-hidden="true"></div>
+    }
+
+    <header class="topbar">
+      <div>
+        <span>Signed in as</span>
+        <strong>{{ auth.displayName() }}</strong>
+      </div>
+
+      <button type="button" class="button ghost" (click)="logout()">Sign out</button>
+    </header>
+
+    <main>
+      @if (navigating()) {
+        <div class="route-loading">
+          <app-loading-indicator label="Loading page" />
+        </div>
+      }
+      <router-outlet />
+    </main>
+  </div>
+</div>

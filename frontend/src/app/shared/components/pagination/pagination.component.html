@@ -1,0 +1,22 @@
+@if (totalElements > 0) {
+  <nav class="pagination" aria-label="Pagination">
+    <div class="pagination-summary">
+      Showing {{ firstItem }}-{{ lastItem }} of {{ totalElements }}
+    </div>
+
+    <label>
+      Rows
+      <select [ngModel]="size" (ngModelChange)="updateSize($event)" [disabled]="disabled">
+        @for (option of pageSizeOptions; track option) {
+          <option [ngValue]="option">{{ option }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="pagination-actions">
+      <button type="button" class="button ghost" (click)="previous()" [disabled]="disabled || page === 0">Previous</button>
+      <span>Page {{ page + 1 }} of {{ totalPages }}</span>
+      <button type="button" class="button ghost" (click)="next()" [disabled]="disabled || page >= totalPages - 1">Next</button>
+    </div>
+  </nav>
+}

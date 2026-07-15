@@ -1,0 +1,402 @@
+<app-page-header
+  eyebrow="Verification detail"
+  [title]="request() ? 'Request ' + request()!.id : 'Request detail'"
+  [description]="request() && permissions.canRunSpecialistWorkflow(request()) ? 'Run eligibility, correct verification data, calculate coverage, and finalize the request.' : 'Review verification data, coverage, status, and audit history.'"
+>
+  <a routerLink="/vobs" class="button ghost">Back to worklist</a>
+  <button type="button" class="button ghost" (click)="load()">Reload</button>
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+@if (message()) {
+  <div class="alert success">{{ message() }}</div>
+}
+
+@if (acting()) {
+  <app-loading-indicator mode="block" [label]="activeAction() || 'Updating request'" />
+}
+
+@if (loading()) {
+  <section class="detail-skeleton">
+    <div class="detail-grid">
+      <article class="panel">
+        <span class="skeleton-line short"></span>
+        <span class="skeleton-line"></span>
+        <span class="skeleton-line medium"></span>
+        <span class="skeleton-line"></span>
+      </article>
+      <article class="panel">
+        <span class="skeleton-line short"></span>
+        <div class="skeleton-grid">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </article>
+    </div>
+    <app-loading-indicator mode="table" label="Loading request details" [rows]="4" [columns]="4" />
+  </section>
+} @else if (request(); as requestData) {
+  <section class="detail-grid">
+    <article class="panel summary-panel">
+      <div class="record-title">
+        <div>
+          <app-status-badge [value]="requestData.status" />
+          <app-status-badge [value]="requestData.priority" />
+        </div>
+        <span>Version {{ requestData.version }} · {{ requestData.locked ? 'Locked' : 'Editable' }}</span>
+      </div>
+
+      <dl class="details">
+        <dt>Patient ID</dt>
+        <dd>{{ requestData.patientId }}</dd>
+        <dt>Date of service</dt>
+        <dd>{{ requestData.dateOfService | date }}</dd>
+        <dt>Assigned to</dt>
+        <dd>{{ requestData.assignedTo || 'Unassigned' }}</dd>
+        <dt>Created</dt>
+        <dd>{{ requestData.createdAt | date: 'medium' }}</dd>
+      </dl>
+
+      <div class="action-grid">
+        @if (permissions.canRunSpecialistWorkflow(requestData)) {
+          <button type="button" class="button primary" (click)="runEligibility()" [disabled]="acting()">
+            @if (activeAction() === 'Running eligibility') {
+              <app-loading-indicator label="Running" />
+            } @else {
+              Run eligibility
+            }
+          </button>
+          <button type="button" class="button primary" (click)="calculateCoverage()" [disabled]="acting()">
+            @if (activeAction() === 'Calculating coverage') {
+              <app-loading-indicator label="Calculating" />
+            } @else {
+              Calculate coverage
+            }
+          </button>
+        }
+        @if (permissions.canEditVobRequest(requestData)) {
+          <button type="button" class="button ghost" (click)="openEdit()" [disabled]="acting()">Edit request</button>
+          <button type="button" class="button ghost" (click)="eligibilityModalOpen.set(true)" [disabled]="acting()">Manual eligibility</button>
+        }
+        @if (permissions.canVerifyVobRequest(requestData)) {
+          <button type="button" class="button success" (click)="confirm('verify')" [disabled]="acting()">
+            @if (activeAction() === 'Verifying request') {
+              <app-loading-indicator label="Verifying" />
+            } @else {
+              Verify
+            }
+          </button>
+        }
+        @if (permissions.canReopenVobRequest(requestData)) {
+          <button type="button" class="button ghost" (click)="confirm('reopen')" [disabled]="acting()">
+            @if (activeAction() === 'Reopening request') {
+              <app-loading-indicator label="Reopening" />
+            } @else {
+              Reopen
+            }
+          </button>
+        }
+        <button type="button" class="button ghost" (click)="loadAudit()" [disabled]="acting()">
+          @if (activeAction() === 'Loading audit trail') {
+            <app-loading-indicator label="Loading" />
+          } @else {
+            Audit trail
+          }
+        </button>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Coverage Summary</h2>
+      @if (requestData.coverageSummary) {
+        <div class="metric-grid compact">
+          <div>
+            <span>Estimated charge</span>
+            <strong>{{ requestData.coverageSummary.totalEstimatedCharge | currency }}</strong>
+          </div>
+          <div>
+            <span>Allowed amount</span>
+            <strong>{{ requestData.coverageSummary.totalAllowedAmount || 0 | currency }}</strong>
+          </div>
+          <div>
+            <span>Deductible applied</span>
+            <strong>{{ requestData.coverageSummary.totalDeductibleApplied || 0 | currency }}</strong>
+          </div>
+          <div>
+            <span>Copay applied</span>
+            <strong>{{ requestData.coverageSummary.totalCopayApplied || 0 | currency }}</strong>
+          </div>
+          <div>
+            <span>Coinsurance</span>
+            <strong>{{ requestData.coverageSummary.totalCoinsuranceApplied || 0 | currency }}</strong>
+          </div>
+          <div>
+            <span>Non-covered</span>
+            <strong>{{ requestData.coverageSummary.totalNonCoveredAmount || 0 | currency }}</strong>
+          </div>
+          <div>
+            <span>Insurance pays</span>
+            <strong>{{ requestData.coverageSummary.totalInsurancePays | currency }}</strong>
+          </div>
+          <div>
+            <span>Patient responsibility</span>
+            <strong>{{ requestData.coverageSummary.totalPatientResponsibility | currency }}</strong>
+          </div>
+        </div>
+      } @else {
+        <app-empty-state
+          title="No coverage yet"
+          [message]="permissions.canRunSpecialistWorkflow(requestData) ? 'Run eligibility, then calculate coverage.' : 'Coverage appears here after a specialist calculates it.'"
+        />
+      }
+    </article>
+  </section>
+
+  <section class="content-grid">
+    <article class="panel">
+      <h2>Insurance</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Payer</th>
+              <th>Member</th>
+              <th>Plan</th>
+              <th>Order</th>
+              <th>Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (policy of requestData.insurancePolicies; track policy.memberId) {
+              <tr>
+                <td>{{ policy.payerName }}</td>
+                <td>{{ policy.memberId }}</td>
+                <td>{{ policy.planType || 'Not set' }}</td>
+                <td>{{ policy.insuranceOrder }}</td>
+                <td><app-status-badge [value]="policy.active ? 'true' : 'false'" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel">
+      <h2>Procedures</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Charge</th>
+              <th>Authorization</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (procedure of requestData.procedures; track procedure.procedureCode) {
+              <tr>
+                <td>{{ procedure.procedureCode }}</td>
+                <td>{{ procedure.procedureName }}</td>
+                <td>{{ procedure.estimatedCharge | currency }}</td>
+                <td>{{ procedure.requiresAuthorization ? 'Required' : 'Not required' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <h2>Eligibility Result</h2>
+    @if (requestData.eligibilityResult) {
+      <dl class="details">
+        <dt>Coverage active</dt>
+        <dd>{{ requestData.eligibilityResult.coverageActive }}</dd>
+        <dt>Network</dt>
+        <dd>{{ requestData.eligibilityResult.networkStatus }}</dd>
+        <dt>Copay</dt>
+        <dd>{{ requestData.eligibilityResult.copay | currency }}</dd>
+        <dt>Coinsurance</dt>
+        <dd>{{ requestData.eligibilityResult.coinsurancePercent }}%</dd>
+        <dt>Deductible total</dt>
+        <dd>{{ requestData.eligibilityResult.deductibleTotal || 0 | currency }}</dd>
+        <dt>Deductible met</dt>
+        <dd>{{ requestData.eligibilityResult.deductibleMet || 0 | currency }}</dd>
+        <dt>Deductible remaining</dt>
+        <dd>{{ requestData.eligibilityResult.deductibleRemaining | currency }}</dd>
+        <dt>OOP max</dt>
+        <dd>{{ requestData.eligibilityResult.oopMax || 0 | currency }}</dd>
+        <dt>OOP met</dt>
+        <dd>{{ requestData.eligibilityResult.oopMet || 0 | currency }}</dd>
+        <dt>OOP remaining</dt>
+        <dd>{{ requestData.eligibilityResult.oopRemaining || 0 | currency }}</dd>
+        <dt>Prior authorization</dt>
+        <dd>{{ requestData.eligibilityResult.priorAuthorizationRequired ? 'Required' : 'Not required' }}</dd>
+        <dt>Benefit source</dt>
+        <dd>{{ requestData.eligibilityResult.benefitSource || 'Not set' }}</dd>
+        <dt>Verified by</dt>
+        <dd>{{ requestData.eligibilityResult.verifiedBy || 'Not set' }}</dd>
+        <dt>Verified at</dt>
+        <dd>{{ requestData.eligibilityResult.verifiedAt ? (requestData.eligibilityResult.verifiedAt | date: 'medium') : 'Not set' }}</dd>
+        <dt>Notes</dt>
+        <dd>{{ requestData.eligibilityResult.notes || 'No notes' }}</dd>
+      </dl>
+    } @else {
+      <app-empty-state
+        title="Eligibility not started"
+        [message]="permissions.canRunSpecialistWorkflow(requestData) ? 'Use Run eligibility or Manual eligibility.' : 'Eligibility appears here after a specialist reviews it.'"
+      />
+    }
+  </section>
+
+  @if (requestData.coverageSummary?.procedureCoverages?.length) {
+    <section class="panel">
+      <h2>Procedure Coverage Breakdown</h2>
+      <div class="table-wrap">
+        <table class="coverage-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Estimated</th>
+              <th>Allowed</th>
+              <th>Deductible</th>
+              <th>Copay</th>
+              <th>Coinsurance</th>
+              <th>Non-covered</th>
+              <th>Insurance pays</th>
+              <th>Patient responsibility</th>
+              <th>Prior auth</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (coverage of requestData.coverageSummary.procedureCoverages; track coverage.procedureCode) {
+              <tr>
+                <td>{{ coverage.procedureCode }}</td>
+                <td>{{ coverage.procedureName || 'Not set' }}</td>
+                <td>{{ coverage.estimatedCharge || 0 | currency }}</td>
+                <td>{{ coverage.allowedAmount || 0 | currency }}</td>
+                <td>{{ coverage.deductibleApplied || 0 | currency }}</td>
+                <td>{{ coverage.copayApplied || 0 | currency }}</td>
+                <td>{{ coverage.coinsuranceApplied || 0 | currency }}</td>
+                <td>{{ coverage.nonCoveredAmount || 0 | currency }}</td>
+                <td>{{ coverage.insurancePays | currency }}</td>
+                <td>{{ coverage.patientResponsibility | currency }}</td>
+                <td>{{ coverage.priorAuthorizationRequired ? 'Required' : 'Not required' }}</td>
+                <td>{{ coverage.calculationNote || 'Calculated' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  }
+}
+
+<app-modal [open]="editModalOpen()" title="Edit request" size="large" (closed)="editModalOpen.set(false)">
+  <form class="modal-body form-grid" [formGroup]="editForm" (ngSubmit)="saveEdit()">
+    <label>Date of service <input type="date" formControlName="dateOfService" /></label>
+    <label>
+      Priority
+      <select formControlName="priority">
+        @for (priority of priorities; track priority) {
+          <option [ngValue]="priority">{{ priority }}</option>
+        }
+      </select>
+    </label>
+    @if (permissions.canAssignVobRequest()) {
+      <label>Assigned to <input formControlName="assignedTo" /></label>
+    }
+    <label>Reason <input formControlName="reason" /></label>
+
+    <h3 class="full">Insurance</h3>
+    <label>Payer <input formControlName="payerName" /></label>
+    <label>Member ID <input formControlName="memberId" /></label>
+    <label>Group <input formControlName="groupNumber" /></label>
+    <label>Coverage start <input type="date" formControlName="coverageStart" /></label>
+    <label>Coverage end <input type="date" formControlName="coverageEnd" /></label>
+
+    <h3 class="full">Procedure</h3>
+    <label>Code <input formControlName="procedureCode" /></label>
+    <label>Name <input formControlName="procedureName" /></label>
+    <label>Charge <input type="number" formControlName="estimatedCharge" /></label>
+    <label class="checkbox-field"><input type="checkbox" formControlName="requiresAuthorization" /> Requires authorization</label>
+    <label class="full">Note <textarea rows="3" formControlName="note"></textarea></label>
+
+    <div class="form-actions full">
+      <button type="button" class="button ghost" (click)="editModalOpen.set(false)">Cancel</button>
+      <button type="submit" class="button primary" [disabled]="acting()">
+        @if (activeAction() === 'Saving request changes') {
+          <app-loading-indicator label="Saving" />
+        } @else {
+          Save changes
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal [open]="eligibilityModalOpen()" title="Manual eligibility result" (closed)="eligibilityModalOpen.set(false)">
+  <form class="modal-body form-grid" [formGroup]="eligibilityForm" (ngSubmit)="saveEligibility()">
+    <label class="checkbox-field"><input type="checkbox" formControlName="coverageActive" /> Coverage active</label>
+    <label>
+      Network
+      <select formControlName="networkStatus">
+        <option value="IN_NETWORK">IN_NETWORK</option>
+        <option value="OUT_OF_NETWORK">OUT_OF_NETWORK</option>
+        <option value="UNKNOWN">UNKNOWN</option>
+      </select>
+    </label>
+    <label>Copay <input type="number" formControlName="copay" /></label>
+    <label>Coinsurance % <input type="number" formControlName="coinsurancePercent" /></label>
+    <label>Deductible remaining <input type="number" formControlName="deductibleRemaining" /></label>
+    <label class="full">Notes <textarea rows="3" formControlName="notes"></textarea></label>
+
+    <div class="form-actions full">
+      <button type="button" class="button ghost" (click)="eligibilityModalOpen.set(false)">Cancel</button>
+      <button type="submit" class="button primary" [disabled]="acting()">
+        @if (activeAction() === 'Saving eligibility result') {
+          <app-loading-indicator label="Saving" />
+        } @else {
+          Save eligibility
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal [open]="auditModalOpen()" title="Request audit trail" size="large" (closed)="auditModalOpen.set(false)">
+  <div class="modal-body">
+    @if (auditEvents().length) {
+      <div class="timeline">
+        @for (event of auditEvents(); track event.id || event.timestamp) {
+          <article>
+            <strong>{{ event.action || event.eventType || 'AUDIT_EVENT' }}</strong>
+            <span>{{ event.actorUsername || 'system' }} · {{ event.timestamp | date: 'medium' }}</span>
+            @if (event.errorMessage) {
+              <p>{{ event.errorMessage }}</p>
+            }
+          </article>
+        }
+      </div>
+    } @else {
+      <app-empty-state title="No audit events" message="The backend did not return audit events for this request." />
+    }
+  </div>
+</app-modal>
+
+<app-confirm-modal
+  [open]="pendingAction() !== ''"
+  [title]="pendingAction() === 'verify' ? 'Verify request?' : 'Reopen request?'"
+  [message]="pendingAction() === 'verify' ? 'The backend will validate eligibility and coverage before locking this request.' : 'This will move the request back into an editable workflow state.'"
+  [confirmLabel]="pendingAction() === 'verify' ? 'Verify' : 'Reopen'"
+  (cancelled)="pendingAction.set('')"
+  (confirmed)="completeConfirmedAction()"
+/>

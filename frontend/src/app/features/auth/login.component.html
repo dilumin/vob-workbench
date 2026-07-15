@@ -1,0 +1,42 @@
+<main class="login-page">
+  <section class="login-panel">
+    <div class="intro">
+      <span class="brand-mark">V</span>
+      <p>VOB Workbench</p>
+      <h1>Verify benefits with clarity.</h1>
+      <span class="supporting">A clean Angular client for the Spring Boot VOB workflow.</span>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <h2>Sign in</h2>
+
+      @if (error()) {
+        <div class="alert error">{{ error() }}</div>
+      }
+
+      <label>
+        Username
+        <input formControlName="username" autocomplete="username" />
+      </label>
+
+      <label>
+        Password
+        <input formControlName="password" type="password" autocomplete="current-password" />
+      </label>
+
+      <button type="submit" class="button primary" [disabled]="loading()">
+        @if (loading()) {
+          <app-loading-indicator label="Signing in" />
+        } @else {
+          Sign in
+        }
+      </button>
+
+      <div class="demo-users" aria-label="Demo users">
+        @for (user of demoUsers; track user) {
+          <button type="button" class="button ghost" (click)="chooseUser(user)">{{ user }}</button>
+        }
+      </div>
+    </form>
+  </section>
+</main>

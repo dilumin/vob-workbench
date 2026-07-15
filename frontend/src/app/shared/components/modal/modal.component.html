@@ -1,0 +1,12 @@
+@if (open) {
+  <div class="modal-backdrop" (click)="closed.emit()">
+    <section class="modal-window" [class.large]="size === 'large'" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+      <header>
+        <h2>{{ title }}</h2>
+        <button type="button" class="icon-button" aria-label="Close dialog" (click)="closed.emit()">x</button>
+      </header>
+
+      <ng-content />
+    </section>
+  </div>
+}

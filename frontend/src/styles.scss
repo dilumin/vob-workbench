@@ -1,1 +1,635 @@
-/* You can add global styles to this file, and also import other style files */
+:root {
+  --bg: #eef2f5;
+  --surface: #ffffff;
+  --surface-subtle: #f8fafc;
+  --border: #dbe3e8;
+  --border-strong: #cbd5e1;
+  --text: #0f172a;
+  --muted: #64748b;
+  --primary: #245b73;
+  --primary-dark: #1b485c;
+  --accent: #76a56f;
+  --danger: #b42318;
+  --success: #166534;
+  --warning: #92400e;
+  --shadow: 0 12px 36px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+.button {
+  align-items: center;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 9px 13px;
+  text-decoration: none;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.button.primary {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.button.primary:hover {
+  background: var(--primary-dark);
+}
+
+.button.ghost {
+  background: #e8eef2;
+  color: var(--text);
+}
+
+.button.ghost:hover {
+  background: #dbe5eb;
+}
+
+.button.success {
+  background: #dff3e5;
+  color: var(--success);
+}
+
+.button.danger {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  margin-bottom: 18px;
+  padding: 18px;
+}
+
+.panel-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.section-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.count-pill {
+  background: #edf3f6;
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.loading-line {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  font-weight: 700;
+  margin-top: 12px;
+  padding: 14px;
+}
+
+.loading-overlay {
+  align-items: center;
+  background: rgba(248, 250, 252, 0.82);
+  border-radius: 8px;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+  z-index: 2;
+}
+
+.is-busy {
+  position: relative;
+}
+
+.panel-heading h2,
+.panel h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.panel-heading p,
+.panel p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.toolbar {
+  align-items: end;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  margin-bottom: 16px;
+}
+
+.toolbar.filters {
+  grid-template-columns: repeat(3, minmax(170px, 1fr)) auto;
+}
+
+.toolbar.audit-filters {
+  align-items: start;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+}
+
+label {
+  color: #334155;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 7px;
+}
+
+input,
+select,
+textarea {
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  min-height: 40px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(36, 91, 115, 0.15);
+  outline: none;
+}
+
+.checkbox-field {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.checkbox-field input {
+  min-height: auto;
+  width: auto;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  border-collapse: collapse;
+  min-width: 760px;
+  width: 100%;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+td.right {
+  text-align: right;
+}
+
+.row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.pagination {
+  align-items: center;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.pagination label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+
+.pagination select {
+  min-width: 82px;
+}
+
+.pagination-summary,
+.pagination-actions span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.pagination-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.alert {
+  border-radius: 8px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+}
+
+.alert.error {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.alert.success {
+  background: #dcfce7;
+  color: var(--success);
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+.form-grid h3 {
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  margin: 8px 0 0;
+  padding-top: 16px;
+}
+
+.patient-picker {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.picker-header {
+  align-items: start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.picker-header h3 {
+  border: 0;
+  font-size: 0.95rem;
+  margin: 0;
+  padding: 0;
+}
+
+.picker-header p {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.patient-search-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.selected-patient,
+.patient-result {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.patient-result {
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.patient-result:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(36, 91, 115, 0.12);
+}
+
+.selected-patient strong,
+.selected-patient span,
+.patient-result strong,
+.patient-result span {
+  display: block;
+}
+
+.selected-patient span,
+.patient-result span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin-top: 3px;
+}
+
+.patient-results {
+  display: grid;
+  gap: 8px;
+}
+
+.inline-error {
+  background: #fee2e2;
+  border-radius: 6px;
+  color: var(--danger);
+  font-weight: 700;
+  padding: 10px 12px;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.metric-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin-bottom: 18px;
+}
+
+.metric-card,
+.metric-grid.compact > div {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.metric-card span,
+.metric-grid.compact span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.metric-card strong,
+.metric-grid.compact strong {
+  font-size: 1.8rem;
+}
+
+.metric-card.urgent {
+  border-color: #facc15;
+}
+
+.content-grid,
+.detail-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.65fr);
+}
+
+.detail-grid {
+  grid-template-columns: minmax(360px, 0.8fr) minmax(0, 1fr);
+}
+
+.details {
+  display: grid;
+  gap: 10px 16px;
+  grid-template-columns: max-content 1fr;
+  margin: 16px 0 0;
+}
+
+.details dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.record-title {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.record-title > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.record-title span {
+  color: var(--muted);
+}
+
+.action-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.timeline article {
+  border-left: 3px solid var(--primary);
+  background: #f8fafc;
+  border-radius: 0 8px 8px 0;
+  padding: 12px 14px;
+}
+
+.timeline strong,
+.timeline span {
+  display: block;
+}
+
+.timeline span {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.guide ol {
+  color: #334155;
+  line-height: 1.8;
+  margin-bottom: 0;
+  padding-left: 22px;
+}
+
+.skeleton-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.skeleton-grid span {
+  background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
+  animation: skeleton-shimmer 1.25s ease-in-out infinite;
+  background-size: 220% 100%;
+  border-radius: 8px;
+  min-height: 110px;
+}
+
+.detail-skeleton {
+  display: grid;
+  gap: 18px;
+}
+
+.detail-skeleton .panel {
+  display: grid;
+  gap: 14px;
+}
+
+.skeleton-line {
+  animation: skeleton-shimmer 1.25s ease-in-out infinite;
+  background: linear-gradient(90deg, #e2e8f0, #f8fafc, #e2e8f0);
+  background-size: 220% 100%;
+  border-radius: 6px;
+  min-height: 16px;
+}
+
+.skeleton-line.short {
+  max-width: 42%;
+}
+
+.skeleton-line.medium {
+  max-width: 68%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 1100px) {
+  .metric-grid,
+  .toolbar.filters,
+  .toolbar.audit-filters,
+  .content-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .toolbar,
+  .form-grid,
+  .action-grid,
+  .skeleton-grid,
+  .patient-search-row {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions .button {
+    width: 100%;
+  }
+}

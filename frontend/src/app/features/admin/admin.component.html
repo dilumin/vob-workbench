@@ -1,0 +1,124 @@
+<app-page-header
+  eyebrow="Supervisor"
+  title="Admin"
+  description="Manage users and synthetic mock eligibility master data."
+>
+  <button type="button" class="button ghost" (click)="loadMockData()" [disabled]="loadingMockData() || saving()">
+    @if (loadingMockData()) {
+      <app-loading-indicator label="Loading" />
+    } @else {
+      Mock data
+    }
+  </button>
+  <button type="button" class="button primary" (click)="openUserModal()">New user</button>
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+@if (message()) {
+  <div class="alert success">{{ message() }}</div>
+}
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Users</h2>
+      <p>{{ userPageInfo()?.totalElements || 0 }} account(s)</p>
+    </div>
+    <button type="button" class="button ghost" (click)="load()" [disabled]="loading()">
+      @if (loading()) {
+        <app-loading-indicator label="Refreshing" />
+      } @else {
+        Refresh
+      }
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-indicator mode="table" label="Loading users" [rows]="4" [columns]="4" />
+  } @else if (users().length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Full name</th>
+            <th>Role</th>
+            <th>Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id || user.username) {
+            <tr>
+              <td>{{ user.username }}</td>
+              <td>{{ user.fullName }}</td>
+              <td><app-status-badge [value]="user.role" /></td>
+              <td><app-status-badge [value]="user.active ? 'true' : 'false'" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (userPageInfo(); as page) {
+      <app-pagination
+        [page]="page.page"
+        [size]="userPageSize()"
+        [totalElements]="page.totalElements"
+        [totalPages]="page.totalPages"
+        [disabled]="loading()"
+        (pageChange)="load($event)"
+        (sizeChange)="changeUserPageSize($event)"
+      />
+    }
+  } @else {
+    <app-empty-state title="No users loaded" message="Refresh users or create a new account." />
+  }
+</section>
+
+<app-modal [open]="userModalOpen()" title="Create user" (closed)="userModalOpen.set(false)">
+  <form class="modal-body form-grid" [formGroup]="userForm" (ngSubmit)="createUser()">
+    <label>Username <input formControlName="username" /></label>
+    <label>Password <input type="password" formControlName="password" /></label>
+    <label>Full name <input formControlName="fullName" /></label>
+    <label>
+      Role
+      <select formControlName="role">
+        @for (role of roles; track role) {
+          <option [ngValue]="role">{{ role }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="form-actions full">
+      <button type="button" class="button ghost" (click)="userModalOpen.set(false)">Cancel</button>
+      <button type="submit" class="button primary" [disabled]="saving()">
+        @if (saving()) {
+          <app-loading-indicator label="Creating" />
+        } @else {
+          Create user
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal [open]="mockModalOpen()" title="Mock eligibility data" size="large" (closed)="mockModalOpen.set(false)">
+  <div class="modal-body">
+    <label>
+      JSON
+      <textarea rows="22" [(ngModel)]="mockJson"></textarea>
+    </label>
+    <div class="form-actions">
+      <button type="button" class="button ghost" (click)="mockModalOpen.set(false)">Close</button>
+      <button type="button" class="button primary" [disabled]="saving()" (click)="saveMockData()">
+        @if (saving()) {
+          <app-loading-indicator label="Saving" />
+        } @else {
+          Save mock data
+        }
+      </button>
+    </div>
+  </div>
+</app-modal>

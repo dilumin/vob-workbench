@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: VOB Workbench API
+  version: 0.1.0
+  description: Compact API specification for the VOB Workbench assessment.
+
+servers:
+  - url: http://localhost:8080
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Auth
+  - name: Patients
+  - name: VOB Requests
+  - name: Audit
+  - name: Admin
+
+paths:
+  /api/health:
+    get:
+      tags: [Auth]
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: API is running.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: VOB Workbench API is running
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and receive access and refresh tokens.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate refresh token and receive a new access token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refresh successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke a refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Refresh token revoked.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutResponse'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user.
+      responses:
+        '200':
+          description: Current user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/patients:
+    get:
+      tags: [Patients]
+      summary: Search patients.
+      parameters:
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: Patient search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientList'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Patients]
+      summary: Create patient.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientWrite'
+      responses:
+        '201':
+          description: Patient created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/patients/{id}:
+    get:
+      tags: [Patients]
+      summary: Get patient by ID.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Patient detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [Patients]
+      summary: Patch patient.
+      description: Only supplied fields are updated.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientPatch'
+      responses:
+        '200':
+          description: Patient updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests:
+    get:
+      tags: [VOB Requests]
+      summary: Search VOB requests.
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/VobStatus'
+        - name: assignedTo
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/q'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+      responses:
+        '200':
+          description: VOB request search results.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequestList'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [VOB Requests]
+      summary: Create VOB request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VobRequestCreate'
+      responses:
+        '201':
+          description: VOB request created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}:
+    get:
+      tags: [VOB Requests]
+      summary: Get VOB request by ID.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: VOB request detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+    patch:
+      tags: [VOB Requests]
+      summary: Patch VOB request.
+      description: |
+        Single update endpoint for assignment, insurance, procedures,
+        eligibility edits, notes, and manual corrections. Status is controlled
+        by backend workflow actions. `version` is required for optimistic locking.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VobRequestPatch'
+      responses:
+        '200':
+          description: VOB request updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}/eligibility-check:
+    post:
+      tags: [VOB Requests]
+      summary: Run mock eligibility check.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Request updated with eligibility result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}/calculate-coverage:
+    post:
+      tags: [VOB Requests]
+      summary: Calculate coverage and patient responsibility.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Coverage summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoverageSummary'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}/verify:
+    post:
+      tags: [VOB Requests]
+      summary: Verify a VOB request.
+      description: Backend validates eligibility and coverage are complete before moving the request to VERIFIED.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Request verified.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}/reopen:
+    post:
+      tags: [VOB Requests]
+      summary: Reopen a verified or unable-to-verify VOB request.
+      description: Supervisor/admin-only workflow action.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Request reopened.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VobRequest'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/vob-requests/{id}/audit:
+    get:
+      tags: [VOB Requests]
+      summary: Get audit trail.
+      parameters:
+        - $ref: '#/components/parameters/id'
+      responses:
+        '200':
+          description: Masked audit events.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditEvent'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/audit-events:
+    get:
+      tags: [Audit]
+      summary: Search audit events.
+      description: Supervisor/admin-only audit search. Results do not expose raw PHI or token values.
+      parameters:
+        - name: actorUsername
+          in: query
+          schema:
+            type: string
+        - name: actorRole
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          schema:
+            type: string
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: vobRequestId
+          in: query
+          schema:
+            type: string
+        - name: success
+          in: query
+          schema:
+            type: boolean
+        - name: errorCode
+          in: query
+          schema:
+            type: string
+        - name: httpMethod
+          in: query
+          schema:
+            type: string
+        - name: path
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            default: timestamp
+            enum: [timestamp, actorUsername, action, entityType, success]
+        - name: sortDirection
+          in: query
+          schema:
+            type: string
+            default: desc
+            enum: [asc, desc]
+      responses:
+        '200':
+          description: Audit events.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventPage'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/dashboard/summary:
+    get:
+      tags: [VOB Requests]
+      summary: Get dashboard counts.
+      responses:
+        '200':
+          description: Dashboard summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardSummary'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/admin/users:
+    get:
+      tags: [Admin]
+      summary: List users.
+      responses:
+        '200':
+          description: Users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/Error'
+    post:
+      tags: [Admin]
+      summary: Create user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        default:
+          $ref: '#/components/responses/Error'
+
+  /api/admin/mock-data:
+    get:
+      tags: [Admin]
+      summary: Get mock eligibility master data.
+      responses:
+        '200':
+          description: Synthetic payer and procedure-rule data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockData'
+        default:
+          $ref: '#/components/responses/Error'
+    put:
+      tags: [Admin]
+      summary: Replace mock eligibility master data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MockData'
+      responses:
+        '200':
+          description: Mock data saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MockData'
+        default:
+          $ref: '#/components/responses/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    q:
+      name: q
+      in: query
+      schema:
+        type: string
+    page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    Error:
+      description: Standard error response.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          example: 409
+        code:
+          type: string
+          example: VERSION_CONFLICT
+        message:
+          type: string
+        path:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+    Role:
+      type: string
+      enum: [RECEPTIONIST, SPECIALIST, SUPERVISOR_ADMIN, VIEWER]
+    VobStatus:
+      type: string
+      enum: [PENDING, IN_PROGRESS, NEEDS_INFO, SPECIALIST_REVIEW, VERIFIED, UNABLE_TO_VERIFY, REOPENED, CANCELLED]
+    Priority:
+      type: string
+      enum: [ROUTINE, URGENT]
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: specialist1
+        password:
+          type: string
+          format: password
+          example: password123
+    AuthResponse:
+      type: object
+      required: [accessToken, refreshToken, tokenType, expiresIn, username, roles]
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token. Send in Authorization as Bearer token.
+        refreshToken:
+          type: string
+          description: Opaque refresh token. Do not send in Authorization headers.
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Access token lifetime in seconds.
+          example: 900
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LogoutRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    LogoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out successfully.
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        fullName:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        active:
+          type: boolean
+    UserCreate:
+      type: object
+      required: [username, password, fullName, role]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        fullName:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+
+    PatientWrite:
+      type: object
+      required: [mrn, firstName, lastName, dateOfBirth]
+      properties:
+        mrn:
+          type: string
+          example: MRN-100001
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        phone:
+          type: string
+    PatientPatch:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+        phone:
+          type: string
+    Patient:
+      allOf:
+        - $ref: '#/components/schemas/PatientWrite'
+        - $ref: '#/components/schemas/AuditFields'
+    PatientList:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    VobRequestCreate:
+      type: object
+      required: [patientId, dateOfService, priority, insurancePolicies, procedures]
+      properties:
+        patientId:
+          type: string
+        dateOfService:
+          type: string
+          format: date
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignedTo:
+          type: string
+        insurancePolicies:
+          type: array
+          items:
+            $ref: '#/components/schemas/InsurancePolicy'
+        procedures:
+          type: array
+          items:
+            $ref: '#/components/schemas/Procedure'
+    VobRequestPatch:
+      type: object
+      required: [version]
+      properties:
+        dateOfService:
+          type: string
+          format: date
+        priority:
+          $ref: '#/components/schemas/Priority'
+        assignedTo:
+          type: string
+          nullable: true
+        insurancePolicies:
+          type: array
+          description: Replaces the existing list when supplied.
+          items:
+            $ref: '#/components/schemas/InsurancePolicy'
+        procedures:
+          type: array
+          description: Replaces the existing list when supplied.
+          items:
+            $ref: '#/components/schemas/Procedure'
+        eligibilityResult:
+          $ref: '#/components/schemas/EligibilityResult'
+        note:
+          type: string
+        reason:
+          type: string
+        version:
+          type: integer
+          format: int64
+    VobRequest:
+      allOf:
+        - $ref: '#/components/schemas/VobRequestCreate'
+        - $ref: '#/components/schemas/AuditFields'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/VobStatus'
+            locked:
+              type: boolean
+            version:
+              type: integer
+              format: int64
+            eligibilityResult:
+              $ref: '#/components/schemas/EligibilityResult'
+            coverageSummary:
+              $ref: '#/components/schemas/CoverageSummary'
+    VobRequestList:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/VobRequest'
+        page:
+          $ref: '#/components/schemas/PageInfo'
+
+    InsurancePolicy:
+      type: object
+      required: [payerName, memberId, insuranceOrder]
+      properties:
+        payerName:
+          type: string
+        memberId:
+          type: string
+        groupNumber:
+          type: string
+        planType:
+          type: string
+          enum: [PPO, HMO, EPO, POS]
+        insuranceOrder:
+          type: string
+          enum: [PRIMARY, SECONDARY, TERTIARY]
+        coverageStart:
+          type: string
+          format: date
+        coverageEnd:
+          type: string
+          format: date
+        active:
+          type: boolean
+    Procedure:
+      type: object
+      required: [procedureCode, procedureName, estimatedCharge]
+      properties:
+        procedureCode:
+          type: string
+          example: IMG-001
+        procedureName:
+          type: string
+          example: X-Ray
+        estimatedCharge:
+          type: number
+          format: double
+        requiresAuthorization:
+          type: boolean
+
+    EligibilityResult:
+      type: object
+      properties:
+        coverageActive:
+          type: boolean
+        networkStatus:
+          type: string
+          enum: [IN_NETWORK, OUT_OF_NETWORK, UNKNOWN]
+        copay:
+          type: number
+          format: double
+        coinsurancePercent:
+          type: integer
+        deductibleRemaining:
+          type: number
+          format: double
+        notes:
+          type: string
+    CoverageSummary:
+      type: object
+      properties:
+        totalEstimatedCharge:
+          type: number
+          format: double
+        totalInsurancePays:
+          type: number
+          format: double
+        totalPatientResponsibility:
+          type: number
+          format: double
+        procedureCoverages:
+          type: array
+          items:
+            type: object
+            properties:
+              procedureCode:
+                type: string
+              insurancePays:
+                type: number
+                format: double
+              patientResponsibility:
+                type: number
+                format: double
+
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        requestId:
+          type: string
+        eventType:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        patientId:
+          type: string
+        vobRequestId:
+          type: string
+        actorUsername:
+          type: string
+        actorRole:
+          type: string
+        fieldName:
+          type: string
+        oldValue:
+          type: string
+          description: Sensitive values are masked.
+        newValue:
+          type: string
+          description: Sensitive values are masked.
+        correlationId:
+          type: string
+        httpMethod:
+          type: string
+        path:
+          type: string
+        success:
+          type: boolean
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AuditEventSearchItem:
+      type: object
+      properties:
+        id:
+          type: string
+        actorUsername:
+          type: string
+        actorRole:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        patientId:
+          type: string
+        vobRequestId:
+          type: string
+        correlationId:
+          type: string
+        httpMethod:
+          type: string
+        path:
+          type: string
+        success:
+          type: boolean
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+          additionalProperties: true
+
+    AuditEventPage:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEventSearchItem'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        first:
+          type: boolean
+        last:
+          type: boolean
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalRequests:
+          type: integer
+        pending:
+          type: integer
+        inProgress:
+          type: integer
+        verified:
+          type: integer
+        urgent:
+          type: integer
+    MockData:
+      type: object
+      properties:
+        payers:
+          type: array
+          items:
+            type: string
+        procedureRules:
+          type: array
+          items:
+            type: object
+            properties:
+              payerName:
+                type: string
+              procedureCode:
+                type: string
+              coveragePercent:
+                type: integer
+
+    AuditFields:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PageInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer

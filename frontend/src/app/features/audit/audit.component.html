@@ -1,0 +1,84 @@
+<app-page-header
+  eyebrow="Compliance"
+  title="Audit Events"
+  description="Search PHI-safe backend audit events across users, requests, and workflow actions."
+>
+  <button type="button" class="button ghost" (click)="clear()" [disabled]="loading()">Clear</button>
+  <button type="button" class="button primary" (click)="applyFilters()" [disabled]="loading()">
+    @if (loading()) {
+      <app-loading-indicator label="Searching" />
+    } @else {
+      Search
+    }
+  </button>
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+<section class="panel">
+  <div class="toolbar audit-filters">
+    <label>Actor <input [(ngModel)]="filters.actorUsername" /></label>
+    <label>Action <input [(ngModel)]="filters.action" /></label>
+    <label>Entity type <input [(ngModel)]="filters.entityType" /></label>
+    <label>Entity ID <input [(ngModel)]="filters.entityId" /></label>
+    <label>Patient ID <input [(ngModel)]="filters.patientId" /></label>
+    <label>VOB ID <input [(ngModel)]="filters.vobRequestId" /></label>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Results</h2>
+      <p>{{ result()?.totalElements || 0 }} total event(s)</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <app-loading-indicator mode="table" label="Loading audit events" [rows]="6" [columns]="7" />
+  } @else if (result()?.content?.length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Action</th>
+            <th>Actor</th>
+            <th>Entity</th>
+            <th>Details</th>
+            <th>Success</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of result()?.content; track event.id || event.timestamp) {
+            <tr>
+              <td>{{ event.timestamp | date: 'medium' }}</td>
+              <td>{{ event.action }}</td>
+              <td>{{ event.actorUsername || 'system' }}</td>
+              <td>{{ event.entityType }} {{ event.entityId }}</td>
+              <td>{{ metadataText(event.metadata) }}</td>
+              <td><app-status-badge [value]="event.success ? 'true' : 'false'" /></td>
+              <td>{{ event.errorCode || '-' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (result(); as page) {
+      <app-pagination
+        [page]="page.page"
+        [size]="pageSize()"
+        [totalElements]="page.totalElements"
+        [totalPages]="page.totalPages"
+        [disabled]="loading()"
+        (pageChange)="search($event)"
+        (sizeChange)="changePageSize($event)"
+      />
+    }
+  } @else {
+    <app-empty-state title="No audit events found" message="Try fewer filters or perform an action in the app." />
+  }
+</section>

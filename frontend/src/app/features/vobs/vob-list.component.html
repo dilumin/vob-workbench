@@ -1,0 +1,233 @@
+<app-page-header
+  eyebrow="Verification"
+  title="VOB Requests"
+  description="Search the worklist, create requests, and open specialist verification details."
+>
+  @if (permissions.canCreateVobRequest()) {
+    <button type="button" class="button primary" (click)="openCreateModal()">New request</button>
+  }
+</app-page-header>
+
+@if (error()) {
+  <div class="alert error">{{ error() }}</div>
+}
+
+<section class="panel">
+  <div class="section-heading">
+    <h2>Worklist</h2>
+    <span class="count-pill">{{ pageInfo()?.totalElements || 0 }} total</span>
+  </div>
+
+  <div class="toolbar filters">
+    <label>
+      Status
+      <select [(ngModel)]="filters.status">
+        @for (status of statuses; track status) {
+          <option [ngValue]="status">{{ status || 'Any status' }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Assigned to
+      <input [(ngModel)]="filters.assignedTo" placeholder="specialist1" />
+    </label>
+    <label>
+      Search
+      <input [(ngModel)]="filters.q" placeholder="Patient, payer, or request text" (keyup.enter)="applyFilters()" />
+    </label>
+    <button type="button" class="button ghost" (click)="applyFilters()" [disabled]="loading()">
+      @if (loading()) {
+        <app-loading-indicator label="Applying" />
+      } @else {
+        Apply filters
+      }
+    </button>
+  </div>
+
+  @if (loading()) {
+    <app-loading-indicator mode="table" label="Loading VOB requests" [rows]="5" [columns]="7" />
+  } @else if (requests().length) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Date of service</th>
+            <th>Payer</th>
+            <th>Procedure</th>
+            <th>Charge</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (request of requests(); track request.id) {
+            <tr>
+              <td><app-status-badge [value]="request.status" /></td>
+              <td><app-status-badge [value]="request.priority" /></td>
+              <td>{{ request.dateOfService | date }}</td>
+              <td>{{ request.insurancePolicies[0]?.payerName || 'Not set' }}</td>
+              <td>{{ request.procedures[0]?.procedureName || 'Not set' }}</td>
+              <td>{{ request.procedures[0]?.estimatedCharge || 0 | currency }}</td>
+              <td class="right"><a class="button ghost" [routerLink]="['/vobs', request.id]">Open</a></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (pageInfo(); as page) {
+      <app-pagination
+        [page]="page.page"
+        [size]="pageSize()"
+        [totalElements]="page.totalElements"
+        [totalPages]="page.totalPages"
+        [disabled]="loading()"
+        (pageChange)="load($event)"
+        (sizeChange)="changePageSize($event)"
+      />
+    }
+  } @else {
+    <app-empty-state
+      title="No requests found"
+      [message]="permissions.canCreateVobRequest() ? 'Create a request or adjust the filters.' : 'Try adjusting the filters.'"
+    />
+  }
+</section>
+
+<app-modal [open]="modalOpen()" title="New VOB request" size="large" (closed)="modalOpen.set(false)">
+  <form class="modal-body form-grid" [formGroup]="form" (ngSubmit)="create()">
+    <section class="patient-picker full">
+      <div class="picker-header">
+        <div>
+          <h3>Patient</h3>
+          <p>Search by MRN, name, or phone. The request will use the selected patient record.</p>
+        </div>
+      </div>
+
+      @if (selectedPatient(); as patient) {
+        <div class="selected-patient">
+          <div>
+            <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+            <span>{{ patient.mrn }} · DOB {{ patient.dateOfBirth | date }}</span>
+          </div>
+          <button type="button" class="button ghost" (click)="clearSelectedPatient()">Change</button>
+        </div>
+      } @else {
+        <div class="patient-search-row">
+          <label>
+            Find patient
+            <input
+              name="patientSearch"
+              [(ngModel)]="patientSearchTerm"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Example: MRN-100001 or Test Patient"
+              (keyup.enter)="searchPatients()"
+            />
+          </label>
+          <button type="button" class="button ghost" (click)="searchPatients()" [disabled]="patientSearchLoading()">
+            @if (patientSearchLoading()) {
+              <app-loading-indicator label="Searching" />
+            } @else {
+              Search
+            }
+          </button>
+        </div>
+
+        @if (patientSearchLoading()) {
+          <app-loading-indicator mode="block" label="Searching patient records" />
+        }
+
+        @if (patientSearchError()) {
+          <div class="inline-error">{{ patientSearchError() }}</div>
+        }
+
+        @if (patientResults().length) {
+          <div class="patient-results">
+            @for (patient of patientResults(); track patient.id) {
+              <button type="button" class="patient-result" (click)="selectPatient(patient)">
+                <strong>{{ patient.firstName }} {{ patient.lastName }}</strong>
+                <span>{{ patient.mrn }} · DOB {{ patient.dateOfBirth | date }} · {{ patient.phone || 'No phone' }}</span>
+              </button>
+            }
+          </div>
+        }
+      }
+    </section>
+
+    <label>
+      Date of service
+      <input type="date" formControlName="dateOfService" />
+    </label>
+    <label>
+      Priority
+      <select formControlName="priority">
+        @for (priority of priorities; track priority) {
+          <option [ngValue]="priority">{{ priority }}</option>
+        }
+      </select>
+    </label>
+
+    <h3 class="full">Primary insurance</h3>
+    <p class="full muted">
+      Sample mock members: MEM12345 / GRP-100 / SynerCare, MED77881 / HMO-200 / MediPlus, CAR55510 / POS-300 / CareFirst.
+    </p>
+    <label>
+      Payer
+      <input formControlName="payerName" />
+    </label>
+    <label>
+      Member ID
+      <input formControlName="memberId" />
+    </label>
+    <label>
+      Group
+      <input formControlName="groupNumber" />
+    </label>
+    <label>
+      Plan
+      <select formControlName="planType">
+        <option value="PPO">PPO</option>
+        <option value="HMO">HMO</option>
+        <option value="EPO">EPO</option>
+        <option value="POS">POS</option>
+      </select>
+    </label>
+    <label>
+      Coverage start
+      <input type="date" formControlName="coverageStart" />
+    </label>
+    <label>
+      Coverage end
+      <input type="date" formControlName="coverageEnd" />
+    </label>
+
+    <h3 class="full">Planned procedure</h3>
+    <label>
+      Code
+      <input formControlName="procedureCode" />
+    </label>
+    <label>
+      Name
+      <input formControlName="procedureName" />
+    </label>
+    <label>
+      Estimated charge
+      <input type="number" formControlName="estimatedCharge" />
+    </label>
+    <label class="checkbox-field">
+      <input type="checkbox" formControlName="requiresAuthorization" />
+      Requires authorization
+    </label>
+
+    <div class="form-actions full">
+      <button type="button" class="button ghost" (click)="modalOpen.set(false)">Cancel</button>
+      <button type="submit" class="button primary" [disabled]="saving()">
+        @if (saving()) {
+          <app-loading-indicator label="Creating" />
+        } @else {
+          Create request
+        }
+      </button>
+    </div>
+  </form>
+</app-modal>

@@ -1,0 +1,11 @@
+app:
+  mongodb:
+    connection-string: mongodb://localhost:27017
+    database: vob_workbench_test
+
+security:
+  jwt:
+    secret: test-secret-must-be-at-least-32-bytes-long
+    access-token-expiration-ms: 900000
+  refresh-token:
+    expiration-ms: 604800000
